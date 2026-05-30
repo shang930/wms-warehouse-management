@@ -28,3 +28,6 @@ export const menuApi = {
   update: (id:string,data:any)=>request.put(`/users/menus/${id}/`, data),
   remove: (id:string)=>request.delete(`/users/menus/${id}/`),
 }
+export const logApi = {
+  list: (params?:any)=>request.get('/users/logs/', params),
+}

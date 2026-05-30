@@ -6,6 +6,13 @@ export const warehouseApi = {
   update: (id:string,data:any)=>request.put(`/warehouses/${id}/`, data),
   remove: (id:string)=>request.delete(`/warehouses/${id}/`),
 }
+export const zoneApi = {
+  list: (params?:any)=>request.get('/warehouses/zones/', params),
+  simple: (params?:any)=>request.get('/warehouses/zones/?page_size=500', params),
+  create: (data:any)=>request.post('/warehouses/zones/', data),
+  update: (id:string,data:any)=>request.put(`/warehouses/zones/${id}/`, data),
+  remove: (id:string)=>request.delete(`/warehouses/zones/${id}/`),
+}
 export const binApi = {
   list: (params?:any)=>request.get('/warehouses/bins/', params),
   simple: (params?:any)=>request.get('/warehouses/bins/simple/', params),

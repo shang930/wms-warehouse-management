@@ -19,3 +19,9 @@ export const unitApi = {
   update: (id:string,data:any)=>request.put(`/goods/units/${id}/`, data),
   remove: (id:string)=>request.delete(`/goods/units/${id}/`),
 }
+export const brandApi = {
+  list: (params?:any)=>request.get('/goods/brands/', params),
+  create: (data:any)=>request.post('/goods/brands/', data),
+  update: (id:string,data:any)=>request.put(`/goods/brands/${id}/`, data),
+  remove: (id:string)=>request.delete(`/goods/brands/${id}/`),
+}

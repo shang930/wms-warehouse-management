@@ -35,9 +35,16 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 export const asyncRoutes: RouteRecordRaw[] = [
   { path: '/goods', component: AppLayout, meta: { title: '商品管理', icon: 'Goods' },
-    children: [{ path: 'list', name: 'GoodsList', component: GoodsList, meta: { title: '商品列表' } }] },
+    children: [
+      { path: 'list', name: 'GoodsList', component: GoodsList, meta: { title: '商品列表' } },
+      { path: 'data', name: 'GoodsData', component: () => import('@/views/goods/GoodsDataManage.vue'), meta: { title: '基础数据', hidden: true } },
+    ] },
   { path: '/warehouse', component: AppLayout, meta: { title: '仓库管理', icon: 'Box' },
-    children: [{ path: 'list', name: 'WarehouseList', component: WarehouseList, meta: { title: '仓库列表' } }] },
+    children: [
+      { path: 'list', name: 'WarehouseList', component: WarehouseList, meta: { title: '仓库列表' } },
+      { path: 'zone', name: 'ZoneList', component: () => import('@/views/warehouse/ZoneList.vue'), meta: { title: '库区管理' } },
+      { path: 'bin', name: 'BinList', component: () => import('@/views/warehouse/BinList.vue'), meta: { title: '库位管理' } },
+    ] },
   { path: '/supplier', component: AppLayout, meta: { title: '供应商管理', icon: 'Avatar' },
     children: [{ path: 'list', name: 'SupplierList', component: SupplierList, meta: { title: '供应商列表' } }] },
   { path: '/customer', component: AppLayout, meta: { title: '客户管理', icon: 'UserFilled' },
@@ -61,7 +68,10 @@ export const asyncRoutes: RouteRecordRaw[] = [
       { path: 'movement', name: 'StockMovement', component: StockMovementList, meta: { title: '库存流水' } },
     ] },
   { path: '/cyclecount', component: AppLayout, meta: { title: '盘点管理', icon: 'Check' },
-    children: [{ path: 'list', name: 'CycleCountList', component: CycleCountList, meta: { title: '盘点列表' } }] },
+    children: [
+      { path: 'list', name: 'CycleCountList', component: CycleCountList, meta: { title: '盘点列表' } },
+      { path: 'detail/:id', name: 'CycleCountDetail', component: () => import('@/views/cyclecount/CycleCountDetail.vue'), meta: { title: '盘点详情', hidden: true } },
+    ] },
   { path: '/report', component: AppLayout, meta: { title: '报表中心', icon: 'DataAnalysis' },
     children: [
       { path: 'inbound', name: 'ReportInbound', component: ReportInbound, meta: { title: '入库报表' } },
@@ -75,6 +85,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
       { path: 'role', name: 'RoleList', component: RoleList, meta: { title: '角色管理' } },
       { path: 'dept', name: 'DeptList', component: DeptList, meta: { title: '部门管理' } },
       { path: 'menu', name: 'MenuList', component: MenuList, meta: { title: '菜单管理' } },
+      { path: 'log', name: 'LogList', component: () => import('@/views/system/log/LogList.vue'), meta: { title: '操作日志' } },
     ] },
 ]
 

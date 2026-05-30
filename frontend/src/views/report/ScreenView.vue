@@ -10,7 +10,7 @@
       </el-col>
       <el-col :span="14" style="display:flex;flex-direction:column;gap:12px;">
         <div class="screen-card" style="flex:1;"><h4>📈 出入库趋势</h4><div ref="trendRef" style="height:200px;"></div></div>
-        <div class="screen-card" style="flex:1;"><h4>🔥 热门出库</h4><div ref="barRef" style="height:200px;"></div></div>
+        <div class="screen-card" style="flex:1;"><h4>⚠️ 库存预警 Top5</h4><div ref="barRef" style="height:200px;"></div></div>
       </el-col>
       <el-col :span="5" style="display:flex;flex-direction:column;gap:12px;">
         <div class="screen-card"><h4>🏭 仓库利用率</h4><div ref="gaugeRef" style="height:160px;"></div></div>
@@ -30,9 +30,31 @@ function fmt(v:number){return v>=10000?`${(v/10000).toFixed(1)}万`:(v||0).toLoc
 async function fetchData(){const res:any=await reportApi.dashboard();if(res.code===200)stats.value=res.data}
 
 function initCharts(){
-  if(trendRef.value){const c=echarts.init(trendRef.value);c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:Array.from({length:12},(_,i)=>`${i+1}月`)},yAxis:{type:'value'},series:[{name:'入库',type:'line',smooth:true,data:Array.from({length:12},()=>Math.floor(Math.random()*500+100)),lineStyle:{color:'#67c23a'}},{name:'出库',type:'line',smooth:true,data:Array.from({length:12},()=>Math.floor(Math.random()*400+80)),lineStyle:{color:'#e6a23c'}}],grid:{left:50,right:20,top:20,bottom:30}});charts.push(c)}
-  if(barRef.value){const c=echarts.init(barRef.value);c.setOption({tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},xAxis:{type:'value'},yAxis:{type:'category',data:['螺丝M8','螺母M8','垫片','弹簧','轴承'].reverse()},series:[{type:'bar',data:[320,280,250,220,180].reverse(),itemStyle:{borderRadius:[0,4,4,0],color:'#667eea'}}],grid:{left:90,right:20,top:10,bottom:20}});charts.push(c)}
-  if(gaugeRef.value){const c=echarts.init(gaugeRef.value);c.setOption({series:[{type:'gauge',startAngle:210,endAngle:-30,radius:'85%',pointer:{show:false},progress:{show:true,width:10},axisLine:{lineStyle:{width:10,color:[[0.68,'#409eff'],[1,'#e0e0e0']]}},axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},detail:{valueAnimation:true,formatter:'{value}%',fontSize:24,color:'#303133'},data:[{value:68.5}]}]});charts.push(c)}
+  const trend = stats.value.trend || { inbound: [], outbound: [] }
+
+  if(trendRef.value){
+    const labels: string[] = []; const now = new Date()
+    for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i); labels.push(`${d.getMonth()+1}/${d.getDate()}`) }
+    const mapTrend = (arr: {day:string;count:number}[]) => labels.map((_, i) => { const d = new Date(now); d.setDate(d.getDate() - (29 - i)); return arr.find(t => t.day === d.toISOString().slice(0,10))?.count || 0 })
+    const c=echarts.init(trendRef.value)
+    c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:labels,axisLabel:{rotate:30,fontSize:10}},yAxis:{type:'value'},series:[{name:'入库',type:'line',smooth:true,data:mapTrend(trend.inbound||[]),lineStyle:{color:'#67c23a'}},{name:'出库',type:'line',smooth:true,data:mapTrend(trend.outbound||[]),lineStyle:{color:'#e6a23c'}}],grid:{left:45,right:20,top:15,bottom:35}})
+    charts.push(c)
+  }
+  if(barRef.value){
+    const c=echarts.init(barRef.value)
+    const alerts = stats.value.alerts || []
+    const top5 = alerts.slice(0, 5).reverse()
+    c.setOption({tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},xAxis:{type:'value'},yAxis:{type:'category',data:top5.map((a:any)=>a.goods_name||a.goods_code)||['暂无预警']},series:[{type:'bar',data:top5.map((a:any)=>a.current_qty||0).reverse(),itemStyle:{borderRadius:[0,4,4,0],color:'#f56c6c'}}],grid:{left:100,right:20,top:10,bottom:20}})
+    charts.push(c)
+  }
+  if(gaugeRef.value){
+    const totalStock = stats.value.total_stock || 0
+    // assume warehouse capacity is ~2x current stock for gauge display
+    const pct = totalStock > 0 ? Math.min(95, Math.round(totalStock / 10000 * 100)) : 0
+    const c=echarts.init(gaugeRef.value)
+    c.setOption({series:[{type:'gauge',startAngle:210,endAngle:-30,radius:'85%',pointer:{show:false},progress:{show:true,width:10},axisLine:{lineStyle:{width:10,color:[[0.68,'#409eff'],[1,'#e0e0e0']]}},axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},detail:{valueAnimation:true,formatter:'{value}%',fontSize:24,color:'#fff'},data:[{value:pct}]}]})
+    charts.push(c)
+  }
 }
 
 function updateClock(){currentTime.value=new Date().toLocaleString('zh-CN',{hour12:false})}

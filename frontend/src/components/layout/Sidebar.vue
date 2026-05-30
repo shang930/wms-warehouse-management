@@ -21,16 +21,36 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/modules/app'
+import { menuApi } from '@/api/system'
 
 const route = useRoute()
 const appStore = useAppStore()
 
-const menuList = [
+interface MenuNode { id: string; name: string; code: string; menu_type: string; path: string | null; icon: string | null; children?: MenuNode[] }
+
+interface SidebarMenu { id: string; name: string; icon: string; children: { id: string; name: string; path: string }[] }
+
+function convertMenu(nodes: MenuNode[]): SidebarMenu[] {
+  return nodes.filter(n => n.menu_type !== 'B').map(node => {
+    const visibleChildren = (node.children || []).filter(c => c.menu_type !== 'B')
+    return {
+      id: node.id,
+      name: node.name,
+      icon: node.icon || 'FolderOpened',
+      children: visibleChildren.length > 0
+        ? visibleChildren.map(c => ({ id: c.id, name: c.name, path: c.path || `/${c.code}` }))
+        : [{ id: node.id + '-self', name: node.name, path: node.path || `/${node.code}` }],
+    }
+  })
+}
+
+const FALLBACK_MENUS: SidebarMenu[] = [
   { id: '1', name: '仪表盘', icon: 'Odometer', children: [{ id: '1-1', name: '仪表盘', path: '/dashboard' }] },
-  { id: '2', name: '商品管理', icon: 'Goods', children: [{ id: '2-1', name: '商品列表', path: '/goods/list' }] },
-  { id: '3', name: '仓库管理', icon: 'Box', children: [{ id: '3-1', name: '仓库列表', path: '/warehouse/list' }] },
+  { id: '2', name: '商品管理', icon: 'Goods', children: [{ id: '2-1', name: '商品列表', path: '/goods/list' }, { id: '2-2', name: '基础数据', path: '/goods/data' }] },
+  { id: '3', name: '仓库管理', icon: 'Box', children: [{ id: '3-1', name: '仓库列表', path: '/warehouse/list' }, { id: '3-2', name: '库区管理', path: '/warehouse/zone' }, { id: '3-3', name: '库位管理', path: '/warehouse/bin' }] },
   { id: '4', name: '供应商管理', icon: 'Avatar', children: [{ id: '4-1', name: '供应商列表', path: '/supplier/list' }] },
   { id: '5', name: '客户管理', icon: 'UserFilled', children: [{ id: '5-1', name: '客户列表', path: '/customer/list' }] },
   { id: '6', name: '入库管理', icon: 'Upload', children: [{ id: '6-1', name: '入库单列表', path: '/asn/list' }, { id: '6-2', name: '创建入库单', path: '/asn/create' }] },
@@ -38,8 +58,21 @@ const menuList = [
   { id: '8', name: '库存管理', icon: 'Histogram', children: [{ id: '8-1', name: '库存总览', path: '/stock/overview' }, { id: '8-2', name: '库位库存', path: '/stock/location' }, { id: '8-3', name: '库存流水', path: '/stock/movement' }] },
   { id: '9', name: '盘点管理', icon: 'Check', children: [{ id: '9-1', name: '盘点列表', path: '/cyclecount/list' }] },
   { id: '10', name: '报表中心', icon: 'DataAnalysis', children: [{ id: '10-1', name: '入库报表', path: '/report/inbound' }, { id: '10-2', name: '出库报表', path: '/report/outbound' }, { id: '10-3', name: '库存报表', path: '/report/inventory' }, { id: '10-4', name: '数据大屏', path: '/report/screen' }] },
-  { id: '11', name: '系统管理', icon: 'Setting', children: [{ id: '11-1', name: '用户管理', path: '/system/user' }, { id: '11-2', name: '角色管理', path: '/system/role' }, { id: '11-3', name: '部门管理', path: '/system/dept' }] },
+  { id: '11', name: '系统管理', icon: 'Setting', children: [{ id: '11-1', name: '用户管理', path: '/system/user' }, { id: '11-2', name: '角色管理', path: '/system/role' }, { id: '11-3', name: '部门管理', path: '/system/dept' }, { id: '11-4', name: '操作日志', path: '/system/log' }] },
 ]
+
+const menuList = ref<SidebarMenu[]>(FALLBACK_MENUS)
+
+async function loadMenus() {
+  try {
+    const res: any = await menuApi.userMenus()
+    if (res?.code === 200 && res.data?.length > 0) {
+      menuList.value = convertMenu(res.data)
+    }
+  } catch { /* keep fallback menus */ }
+}
+
+onMounted(loadMenus)
 </script>
 
 <style lang="scss" scoped>

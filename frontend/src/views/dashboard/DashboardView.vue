@@ -24,18 +24,41 @@ const stats = ref<any>({ total_goods:0, total_stock:0, today_inbound:0, today_ou
 
 async function fetchStats() { const res: any = await reportApi.dashboard(); if (res.code === 200) stats.value = res.data }
 
+function build30DayLabels(): string[] {
+  const labels: string[] = []
+  const now = new Date()
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i)
+    labels.push(`${d.getMonth()+1}/${d.getDate()}`)
+  }
+  return labels
+}
+
+function mapTrendData(trendArr: {day:string;count:number}[], labels: string[]): number[] {
+  const map = new Map<string, number>()
+  trendArr.forEach(t => map.set(t.day, t.count))
+  const now = new Date()
+  return labels.map((_, i) => {
+    const d = new Date(now); d.setDate(d.getDate() - (29 - i))
+    const key = d.toISOString().slice(0, 10)
+    return map.get(key) || 0
+  })
+}
+
 function initChart() {
   if (!trendRef.value) return
+  const labels = build30DayLabels()
+  const trend = stats.value.trend || { inbound: [], outbound: [] }
   trendChart = echarts.init(trendRef.value)
   trendChart.setOption({
     tooltip: { trigger: 'axis' }, legend: { data: ['入库', '出库'] },
-    xAxis: { type: 'category', data: Array.from({length:30},(_,i)=>`${i+1}日`) },
+    xAxis: { type: 'category', data: labels, axisLabel: { rotate: 30 } },
     yAxis: { type: 'value' },
     series: [
-      { name:'入库',type:'line',smooth:true,data:Array.from({length:30},()=>Math.floor(Math.random()*25+5)),lineStyle:{color:'#67c23a'},itemStyle:{color:'#67c23a'} },
-      { name:'出库',type:'line',smooth:true,data:Array.from({length:30},()=>Math.floor(Math.random()*20+5)),lineStyle:{color:'#e6a23c'},itemStyle:{color:'#e6a23c'} },
+      { name:'入库',type:'line',smooth:true,data:mapTrendData(trend.inbound||[], labels),lineStyle:{color:'#67c23a'},itemStyle:{color:'#67c23a'} },
+      { name:'出库',type:'line',smooth:true,data:mapTrendData(trend.outbound||[], labels),lineStyle:{color:'#e6a23c'},itemStyle:{color:'#e6a23c'} },
     ],
-    grid: { left:50, right:20, top:30, bottom:30 },
+    grid: { left:50, right:20, top:30, bottom:40 },
   })
 }
 
