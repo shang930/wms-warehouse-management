@@ -32,6 +32,10 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Generated conversation logs
+*_instructions.txt
+*.jsonl
+
 # Env files
 .env
 .env.local
